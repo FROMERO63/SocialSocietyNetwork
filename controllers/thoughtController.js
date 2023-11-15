@@ -11,67 +11,90 @@ module.exports = {
         res.status(500).json(err);
       }
     },
-    //get a single user by id
-    async getSingleUser(req, res) {
+    //get a thought user by id
+    async getSingleThought(req, res) {
       try {
-        const user = await User.findOne({ _id: req.params.userId })
+        const thought = await Thought.findOne({ _id: req.params.thoughtId })
           .select('-__v')
-          .populate('thoughts')
-          .populate('friends');
+          .populate('reactions');
   
-        if (!user) {
-          return res.status(404).json({ message: 'No user with that ID' });
+        if (!thought) {
+          return res.status(404).json({ message: 'No thought with that ID' });
         }
   
-        res.json(user);
+        res.json(thought);
       } catch (err) {
         res.status(500).json(err);
       }
     },
     // create a new user
-    async createUser(req, res) {
-      try {
-        const dbUserData = await User.create(req.body);
-        res.json(dbUserData);
+    async createThought(req, res) {
+        try {
+            const thought = await Thought.create(req.body);
+            const user = await User.findOneAndUpdate(
+              { _id: req.body.userId },
+              { $addToSet: { thoughts: thought._id } },
+              { new: true }
+            );
+      
+            if (!user) {
+              return res.status(404).json({
+                message: 'Application created, but found no user with that ID',
+              })
+            }
+      
+            res.json(`Created the ${thought}`);
       } catch (err) {
         res.status(500).json(err);
       }
     },
-    //update user by finding by id and updating with the set to the req.body, returning new
-    async updateUser(req, res) {
+    //update thought by finding by id and updating with the set to the req.body, returning new
+    async updateThought(req, res) {
         try {
-          const user = await User.findOneAndUpdate(
-            {_id:req.params.userId},
-            {$set: req.body},
-            {runValidators: true, new: true}
-          );
-          res.json(user);
+            const thought = await Thought.findOneAndUpdate(
+              { _id: req.params.thoughtId },
+              { $set: req.body },
+              { runValidators: true, new: true }
+            );
+      
+            if (!thought) {
+              return res.status(404).json({ message: 'No thought with this id!' });
+            }
+      
+            res.json(thought);
         } catch (err) {
           res.status(500).json(err);
         }
       },
       //deletes user by id
-      async deleteUser(req, res) {
+      async deleteThought(req, res) {
         try {
-            const user = await User.findOneAndDelete({ _id: req.params.userId });
-      
-            if (!user) {
-              return res.status(404).json({ message: 'No user with that ID' });
+            const thought = await Thought.findOneAndRemove({ _id: req.params.thoughtId });
+            if (!thought) {
+              return res.status(404).json({ message: 'No thought with this id!' });
             }
-      //deletes assocaited thoughts
-            await Thought.deleteMany({ _id: { $in: user.thoughts } });
-            res.json({ message: `${user} and associated thoughts are deleted!` })
+            const user = await User.findOneAndUpdate(
+              { thoughts: req.params.thoughtId },
+              { $pull: { thoughts: req.params.thoughtId } },
+              { new: true }
+            );
+            if (!user) {
+              return res.status(404).json({
+                message: 'Thought deleted but no user with this id!',
+              });
+            }
+            res.json({ message: `${thought} successfully deleted!` });
         } catch (err) {
           res.status(500).json(err);
         }
       },
       //adds a friend by searching user id and friend id and using those as params
-      async addFriend(req, res) {
+      async addReaction(req, res) {
         try {
-            const user = await User.findOneAndUpdate(
-              {_id:req.params.userId},
-              //add to set adds the friend to the list by id
-              {$addToset: {friends: {_id: req.params.friendId}}},
+            const thought = await Thought.findOneAndUpdate(
+              {_id:req.params.thoughtId},
+              //add to set adds the reaction to the list with the req.body input
+              {$addToset: {reactions: req.body}},
               {runValidators: true, new: true}
             );
             res.json(user);
@@ -79,21 +102,19 @@ module.exports = {
           res.status(500).json(err);
         }
       },
-      //deletes a friend by first looking up the user
-      async deleteFriend(req, res) {
+      //deletes a reaction by first looking up the thought
+      async deleteReaction(req, res) {
         try {
-          const user = await User.findOneAndUpdate(
-            { _id: req.params.userId },
-            //uses the $pull to remove friend by friendId from the search params
-            { $pull: { friends: { _Id: req.params.friendId } } },
-            { runValidators: true, new: true }
-          );
-    
-          if (!user) {
-            return res.status(404).json({ message: 'No user with this id!' });
-          }
-
-          res.json(user);
+            const thought = await Thought.findOneAndUpdate(
+              { _id: req.params.thoughtId },
+              { $pull: { reactions: { reactionId: req.params.reactionId } } },
+              { runValidators: true, new: true }
+            );
+      
+            if (!thought) {
+              return res.status(404).json({ message: 'No thought with this id!' });
+            }
+            res.json(thought);
         } catch (err) {
           res.status(500).json(err);
         }
