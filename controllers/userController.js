@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Thought = require('../models/Thought');
 
 module.exports = {
     //get all users
@@ -38,7 +39,7 @@ module.exports = {
     async updateUser(req, res) {
         try {
           const user = await User.findOneAndUpdate(
-            {_id:req.params.userId},
+            { _id: req.params.userId },
             {$set: req.body},
             {runValidators: true, new: true}
           );
@@ -68,7 +69,7 @@ module.exports = {
             const user = await User.findOneAndUpdate(
               {_id:req.params.userId},
               //add to set adds the friend to the list by id
-              {$addToset: {friends: {_id: req.params.friendId}}},
+              {$addToset: {friends: {_id: req.body}}},
               {runValidators: true, new: true}
             );
             res.json(user);
@@ -82,7 +83,7 @@ module.exports = {
           const user = await User.findOneAndUpdate(
             { _id: req.params.userId },
             //uses the $pull to remove friend by friendId from the search params
-            { $pull: { friends: { _Id: req.params.friendId } } },
+            { $pull: { friends: { _Id: req.params._id } } },
             { runValidators: true, new: true }
           );
     
