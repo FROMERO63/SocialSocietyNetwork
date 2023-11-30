@@ -69,7 +69,7 @@ module.exports = {
             const user = await User.findOneAndUpdate(
               {_id:req.params.userId},
               //add to set adds the friend to the list by id
-              {$addToset: {friends: {_id: req.body}}},
+              {$addToset: {friends: req.body.friendId || req.params.friendId}},
               {runValidators: true, new: true}
             );
             res.json(user);
