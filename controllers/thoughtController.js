@@ -97,7 +97,7 @@ module.exports = {
               {$addToset: {reactions: req.body}},
               {runValidators: true, new: true}
             );
-            res.json(user);
+            res.json(thought);
         } catch (err) {
           res.status(500).json(err);
         }
