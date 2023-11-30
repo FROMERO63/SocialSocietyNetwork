@@ -1,6 +1,6 @@
 const users = [
     {
-        username: "username1234",
+        username: "Frank1234",
         email: "firstuser1234@test.com",
         thoughts: [
             {
